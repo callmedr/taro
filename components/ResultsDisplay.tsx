@@ -38,7 +38,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ drawnCards, interpretat
 
   return (
     <div className="w-full max-w-4xl p-4 md:p-6">
-      <h2 className="text-2xl font-semibold text-purple-400 mb-6 text-center">The whisper of Youngsoo</h2>
+      <h2 className="text-2xl font-semibold text-purple-400 mb-6 text-center">Whispers with Youngsoo</h2>
       
       <div className="mb-8">
         <h3 className="text-xl font-medium text-purple-300 mb-4 text-center">당신이 뽑은 카드</h3>

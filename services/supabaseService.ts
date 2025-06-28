@@ -19,6 +19,39 @@ const getClient = (): SupabaseClient => {
 };
 
 /**
+ * Invokes the 'ai-interpretation' edge function to get an interpretation.
+ */
+export const invokeTarotInterpreter = async (
+  question: string,
+  cards: DrawnCards
+): Promise<string> => {
+  const client = getClient();
+  const { data, error } = await client.functions.invoke('ai-interpretation', {
+    body: {
+      question: question,
+      pastCardName: cards.past.koreanName,
+      presentCardName: cards.present.koreanName,
+      futureCardName: cards.future.koreanName,
+    },
+  });
+
+  if (error) {
+    console.error('Error invoking Supabase function:', error);
+    // This custom error message is caught in App.tsx to provide specific feedback.
+    throw new Error('INTERPRETATION_SERVICE_ERROR');
+  }
+
+  // Edge function should return { interpretation: "text" }
+  if (data && typeof data.interpretation === 'string') {
+    return data.interpretation;
+  } else {
+    console.error('Invalid or missing interpretation in function response:', data);
+    throw new Error('INVALID_FUNCTION_RESPONSE');
+  }
+};
+
+
+/**
  * Saves a single tarot reading to the database.
  * Returns the saved record.
  */
