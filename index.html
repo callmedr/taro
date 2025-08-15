@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>타로 카드 읽기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "react": "https://esm.sh/react@^19.1.1",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.55.0"
+  }
+}
+</script>
+<style>
+  /* From left shuffle area to right vertical slots */
+  @keyframes fly-to-slot-0 { /* To top slot */
+    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+    50% { transform: translate(125px, -80px) rotateY(90deg) scale(0.8); }
+    to { transform: translate(250px, -160px) rotateY(180deg) scale(0.4); opacity: 0; }
+  }
+  @keyframes fly-to-slot-1 { /* To middle slot */
+    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+    50% { transform: translate(125px, 0px) rotateY(90deg) scale(0.8); }
+    to { transform: translate(250px, 0px) rotateY(180deg) scale(0.4); opacity: 0; }
+  }
+  @keyframes fly-to-slot-2 { /* To bottom slot */
+    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+    50% { transform: translate(125px, 80px) rotateY(90deg) scale(0.8); }
+    to { transform: translate(250px, 160px) rotateY(180deg) scale(0.4); opacity: 0; }
+  }
+  .animate-fly-slot-0 { animation: fly-to-slot-0 1.2s ease-in-out forwards; }
+  .animate-fly-slot-1 { animation: fly-to-slot-1 1.2s ease-in-out forwards; }
+  .animate-fly-slot-2 { animation: fly-to-slot-2 1.2s ease-in-out forwards; }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
