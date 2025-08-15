@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>타로 카드 읽기</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Babel Standalone for in-browser JSX/TSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -40,6 +42,8 @@
 </head>
 <body class="bg-gray-900">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <!-- Changed type to "text/babel" for Babel to process it, and path to relative -->
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
