@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI, Type } from "https://esm.sh/@google/genai";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Add a type definition for the Deno global object to resolve TypeScript
 // errors in environments where Deno types are not automatically recognized.
@@ -45,21 +46,17 @@ serve(async (req) => {
   }
 
   try {
-    // 환경 변수에서 API 키 가져오기 (GEMINI_API_KEY로 변경)
+    // 환경 변수에서 API 키 가져오기
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       console.error("GEMINI_API_KEY environment variable not set.");
-      // 키가 없을 경우 명확한 오류 응답 반환
       return new Response(JSON.stringify({ error: '서버 설정 오류: API 키가 누락되었습니다.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
     
-    // 요청 핸들러 내에서 AI 클라이언트 초기화
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-    // 요청 본문 가져오기
     const { question, cards } = await req.json();
 
     if (!question || !cards || !Array.isArray(cards) || cards.length !== 3) {
@@ -69,10 +66,8 @@ serve(async (req) => {
       });
     }
 
-    // 프롬프트 구성
     const prompt = `질문: "${question}"\n\n뽑은 카드:\n1. 과거: ${cards[0].name}\n2. 현재: ${cards[1].name}\n3. 미래: ${cards[2].name}`;
     
-    // Gemini API 호출
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
@@ -85,13 +80,39 @@ serve(async (req) => {
       }
     });
 
-    // 응답에서 JSON 문자열 구문 분석
     const interpretationText = response.text.trim();
     if (!interpretationText.startsWith('{') && !interpretationText.startsWith('[')) {
         console.error('Gemini did not return valid JSON:', interpretationText);
         throw new Error('AI가 유효한 형식의 답변을 생성하지 못했습니다.');
     }
     const interpretation = JSON.parse(interpretationText);
+
+    // --- 데이터베이스에 결과 저장 ---
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      );
+
+      const { error: dbError } = await supabaseClient.from('result').insert({
+        question: question,
+        cards: cards, // 프론트에서 받은 카드 배열을 JSONB로 저장
+        past: interpretation.past,
+        present: interpretation.present,
+        future: interpretation.future,
+        summary: interpretation.summary,
+      });
+
+      if (dbError) {
+        // DB 저장 실패 시 에러를 로그에 남기지만, 사용자에게는 해석 결과를 계속 반환
+        console.error('Database insert error:', dbError.message);
+      }
+    } catch (dbInsertError) {
+       // 마찬가지로 DB 관련 로직에서 에러가 발생해도 로그만 남김
+       console.error('Supabase client or insert operation failed:', dbInsertError.message);
+    }
+    // --- 저장 로직 끝 ---
 
     // 성공적인 응답 반환
     return new Response(JSON.stringify(interpretation), {
@@ -101,7 +122,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing tarot reading:', error);
-    // 일반적인 오류 반환
     return new Response(JSON.stringify({ error: '타로 리딩을 생성하는 중 오류가 발생했습니다.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

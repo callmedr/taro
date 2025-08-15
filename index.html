@@ -39,6 +39,33 @@
   .animate-fly-slot-0 { animation: fly-to-slot-0 1.2s ease-in-out forwards; }
   .animate-fly-slot-1 { animation: fly-to-slot-1 1.2s ease-in-out forwards; }
   .animate-fly-slot-2 { animation: fly-to-slot-2 1.2s ease-in-out forwards; }
+
+  /* Staggered entry animation for result cards */
+  @keyframes card-entry {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-card-entry {
+    animation: card-entry 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0; /* Start hidden */
+  }
+  
+  /* Fade in animation for interpretation text */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 1s ease-in-out forwards;
+  }
 </style>
 </head>
 <body class="bg-gray-900">
@@ -99,6 +126,35 @@
           lg: 'w-48 h-[21rem] md:w-56 md:h-96' // For result cards
         };
         const iconSizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-16 h-16' };
+        
+        const cardRef = useRef(null);
+
+        // This logic should only apply to the large, revealed result cards for the best effect.
+        const isInteractive = size === 'lg' && isRevealed;
+
+        const handleMouseMove = (e) => {
+            if (!isInteractive || !cardRef.current) return;
+
+            const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+            const x = e.clientX - left;
+            const y = e.clientY - top;
+            
+            const rotateX = -1 * ((y - height / 2) / (height / 2)) * 12; // Max 12 deg tilt
+            const rotateY = ((x - width / 2) / (width / 2)) * 12;
+
+            // Apply the transform to the card's container. The flip animation is on a child, so it will inherit this transform.
+            cardRef.current.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+            cardRef.current.style.transition = 'transform 0.05s ease-out';
+        };
+
+        const handleMouseLeave = () => {
+            if (!isInteractive || !cardRef.current) return;
+
+            // Reset transform on mouse leave.
+            cardRef.current.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+            cardRef.current.style.transition = 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+        };
+        
         return (
           <div 
               className={`cursor-pointer group transition-transform duration-300 ${isSelected ? '-translate-y-2' : ''} ${animationClass || ''}`}
@@ -106,7 +162,12 @@
               style={style}
               onAnimationEnd={onAnimationEnd}
           >
-            <div className={`${sizeClasses[size]} [perspective:1000px]`}>
+            <div 
+              ref={cardRef}
+              className={`${sizeClasses[size]} [perspective:1000px]`}
+              onMouseMove={isInteractive ? handleMouseMove : null}
+              onMouseLeave={isInteractive ? handleMouseLeave : null}
+            >
               <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isRevealed ? '[transform:rotateY(180deg)]' : ''} ${isSelected && !isRevealed ? 'ring-4 ring-purple-400 rounded-lg' : ''}`}>
                 <div className="absolute w-full h-full [backface-visibility:hidden] rounded-lg bg-indigo-900 border-2 border-purple-400/50 shadow-lg shadow-purple-900/50 flex items-center justify-center overflow-hidden">
                   <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.1)_0%,_rgba(255,255,255,0)_60%)]"></div>
@@ -352,7 +413,11 @@
                 </div>
                 <div className="mb-8 w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-start justify-center place-items-center">
                   {selectedCards.map((card, index) => (
-                    <div key={card.id} className="flex flex-col items-center">
+                    <div 
+                      key={card.id} 
+                      className="flex flex-col items-center animate-card-entry"
+                      style={{ animationDelay: `${index * 250}ms` }}
+                    >
                       <p className="text-lg font-bold text-purple-300 mb-2">{['과거', '현재', '미래'][index]}</p>
                       <TarotCard card={card} isRevealed={true} size="lg" />
                     </div>
@@ -375,7 +440,7 @@
                         </div>
                     )}
                     {interpretation && (
-                        <div className="space-y-6 text-left p-6 md:p-8 bg-indigo-950/40 border border-purple-500/20 rounded-xl shadow-2xl shadow-purple-900/20">
+                        <div className="space-y-6 text-left p-6 md:p-8 bg-indigo-950/40 border border-purple-500/20 rounded-xl shadow-2xl shadow-purple-900/20 animate-fade-in">
                             <div>
                                 <h3 className="text-xl font-bold text-purple-300 mb-2 border-b-2 border-purple-400/30 pb-2">과거 (첫번째 카드)</h3>
                                 <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{interpretation.past}</p>
