@@ -23,18 +23,18 @@
   @media (min-width: 768px) {
     @keyframes fly-to-slot-0 { /* To top slot */
       from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-      50% { transform: translate(125px, -80px) rotateY(90deg) scale(0.8); }
-      to { transform: translate(250px, -160px) rotateY(180deg) scale(0.4); opacity: 0; }
+      50% { transform: translate(150px, -100px) rotateY(90deg) scale(0.9); }
+      to { transform: translate(300px, -200px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
     @keyframes fly-to-slot-1 { /* To middle slot */
       from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-      50% { transform: translate(125px, 0px) rotateY(90deg) scale(0.8); }
-      to { transform: translate(250px, 0px) rotateY(180deg) scale(0.4); opacity: 0; }
+      50% { transform: translate(150px, 0px) rotateY(90deg) scale(0.9); }
+      to { transform: translate(300px, 0px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
     @keyframes fly-to-slot-2 { /* To bottom slot */
       from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-      50% { transform: translate(125px, 80px) rotateY(90deg) scale(0.8); }
-      to { transform: translate(250px, 160px) rotateY(180deg) scale(0.4); opacity: 0; }
+      50% { transform: translate(150px, 100px) rotateY(90deg) scale(0.9); }
+      to { transform: translate(300px, 200px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
   }
 
@@ -42,18 +42,18 @@
   @media (max-width: 767px) {
     @keyframes fly-to-slot-0 { /* To left slot */
         from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-        50% { transform: translate(-35px, 90px) rotateY(90deg) scale(0.8); }
-        to { transform: translate(-70px, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+        50% { transform: translate(-40px, 120px) rotateY(90deg) scale(0.9); }
+        to { transform: translate(-80px, 240px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
     @keyframes fly-to-slot-1 { /* To middle slot */
         from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-        50% { transform: translate(0, 90px) rotateY(90deg) scale(0.8); }
-        to { transform: translate(0, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+        50% { transform: translate(0, 120px) rotateY(90deg) scale(0.9); }
+        to { transform: translate(0, 240px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
     @keyframes fly-to-slot-2 { /* To right slot */
         from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-        50% { transform: translate(35px, 90px) rotateY(90deg) scale(0.8); }
-        to { transform: translate(70px, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+        50% { transform: translate(40px, 120px) rotateY(90deg) scale(0.9); }
+        to { transform: translate(80px, 240px) rotateY(180deg) scale(0.8); opacity: 0; }
     }
   }
 
@@ -117,10 +117,10 @@
       const TarotCard = ({ card, isRevealed, isSelected = false, onClick, size = 'lg', style, animationClass, onAnimationEnd }) => {
         const sizeClasses = { 
           sm: 'w-16 h-28', // For slots
-          md: 'w-40 h-70', // For shuffling card
-          lg: 'w-48 h-84 md:w-56 md:h-96' // For result cards
+          md: 'w-20 h-36', // For shuffling card
+          lg: 'w-48 h-[21rem] md:w-56 md:h-96' // For result cards
         };
-        const iconSizeClasses = { sm: 'w-8 h-8', md: 'w-12 h-12', lg: 'w-16 h-16' };
+        const iconSizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-16 h-16' };
         return (
           <div 
               className={`cursor-pointer group transition-transform duration-300 ${isSelected ? '-translate-y-2' : ''} ${animationClass || ''}`}
@@ -288,10 +288,10 @@
             );
             case 'shuffling': return (
               <div className="flex flex-col md:flex-row items-center justify-center w-full gap-8 md:gap-16">
-                {/* Left/Top Section: Shuffling */}
-                <div className="flex flex-col items-center order-2 md:order-1">
+                {/* Top/Left Section: Shuffling - CORRECTED ORDER */}
+                <div className="flex flex-col items-center">
                   <p className="text-lg sm:text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
-                  <div className="relative h-64 w-44 md:h-80 md:w-52 flex items-center justify-center">
+                  <div className="relative h-40 w-24 md:h-44 md:w-28 flex items-center justify-center">
                     {!isAnimating && animationCards.map(({ card, style }, index) => (
                       <div key={`${card.id}-${index}`} className="absolute">
                         <TarotCard card={card} isRevealed={false} size="md" style={style} />
@@ -305,10 +305,10 @@
                   </div>
                   <button onClick={handleSelectCard} disabled={isAnimating} className="mt-6 px-12 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">선택</button>
                 </div>
-                {/* Right/Bottom Section: Slots */}
-                <div className="flex flex-row md:flex-col gap-2 md:gap-4 order-1 md:order-2 md:pt-16">
+                {/* Bottom/Right Section: Slots - CORRECTED ORDER */}
+                <div className="flex flex-row md:flex-col gap-4 md:gap-4 md:pt-16">
                   {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="w-14 h-24 md:w-16 md:h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
+                    <div key={index} className="w-16 h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
                       {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="sm" />}
                     </div>
                   ))}
