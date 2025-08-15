@@ -19,22 +19,44 @@
 }
 </script>
 <style>
-  /* From left shuffle area to right vertical slots */
-  @keyframes fly-to-slot-0 { /* To top slot */
-    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-    50% { transform: translate(125px, -80px) rotateY(90deg) scale(0.8); }
-    to { transform: translate(250px, -160px) rotateY(180deg) scale(0.4); opacity: 0; }
+  /* Desktop Animations (screen width > 768px) */
+  @media (min-width: 768px) {
+    @keyframes fly-to-slot-0 { /* To top slot */
+      from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+      50% { transform: translate(125px, -80px) rotateY(90deg) scale(0.8); }
+      to { transform: translate(250px, -160px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
+    @keyframes fly-to-slot-1 { /* To middle slot */
+      from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+      50% { transform: translate(125px, 0px) rotateY(90deg) scale(0.8); }
+      to { transform: translate(250px, 0px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
+    @keyframes fly-to-slot-2 { /* To bottom slot */
+      from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+      50% { transform: translate(125px, 80px) rotateY(90deg) scale(0.8); }
+      to { transform: translate(250px, 160px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
   }
-  @keyframes fly-to-slot-1 { /* To middle slot */
-    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-    50% { transform: translate(125px, 0px) rotateY(90deg) scale(0.8); }
-    to { transform: translate(250px, 0px) rotateY(180deg) scale(0.4); opacity: 0; }
+
+  /* Mobile Animations (screen width <= 767px) */
+  @media (max-width: 767px) {
+    @keyframes fly-to-slot-0 { /* To left slot */
+        from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+        50% { transform: translate(-35px, 90px) rotateY(90deg) scale(0.8); }
+        to { transform: translate(-70px, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
+    @keyframes fly-to-slot-1 { /* To middle slot */
+        from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+        50% { transform: translate(0, 90px) rotateY(90deg) scale(0.8); }
+        to { transform: translate(0, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
+    @keyframes fly-to-slot-2 { /* To right slot */
+        from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
+        50% { transform: translate(35px, 90px) rotateY(90deg) scale(0.8); }
+        to { transform: translate(70px, 180px) rotateY(180deg) scale(0.4); opacity: 0; }
+    }
   }
-  @keyframes fly-to-slot-2 { /* To bottom slot */
-    from { transform: translate(0, 0) rotateY(0deg) scale(1); opacity: 1; }
-    50% { transform: translate(125px, 80px) rotateY(90deg) scale(0.8); }
-    to { transform: translate(250px, 160px) rotateY(180deg) scale(0.4); opacity: 0; }
-  }
+
   .animate-fly-slot-0 { animation: fly-to-slot-0 1.2s ease-in-out forwards; }
   .animate-fly-slot-1 { animation: fly-to-slot-1 1.2s ease-in-out forwards; }
   .animate-fly-slot-2 { animation: fly-to-slot-2 1.2s ease-in-out forwards; }
@@ -93,7 +115,11 @@
 
       // --- From components/TarotCard.tsx ---
       const TarotCard = ({ card, isRevealed, isSelected = false, onClick, size = 'lg', style, animationClass, onAnimationEnd }) => {
-        const sizeClasses = { sm: 'w-16 h-28', md: 'w-40 h-70', lg: 'w-[240px] h-[420px]' };
+        const sizeClasses = { 
+          sm: 'w-16 h-28', // For slots
+          md: 'w-40 h-70', // For shuffling card
+          lg: 'w-48 h-84 md:w-56 md:h-96' // For result cards
+        };
         const iconSizeClasses = { sm: 'w-8 h-8', md: 'w-12 h-12', lg: 'w-16 h-16' };
         return (
           <div 
@@ -255,16 +281,17 @@
           switch (gameState) {
             case 'question': return (
               <form onSubmit={handleQuestionSubmit} className="w-full max-w-lg flex flex-col items-center">
-                <h2 className="text-2xl text-indigo-200 mb-4 text-center">어떤 질문을 가지고 계신가요?</h2>
+                <h2 className="text-xl sm:text-2xl text-indigo-200 mb-4 text-center">어떤 질문을 가지고 계신가요?</h2>
                 <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="예: 저의 연애운은 어떨까요?" className="w-full h-32 p-4 bg-gray-800/50 border-2 border-purple-400/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
                 <button type="submit" disabled={!question.trim()} className="mt-6 px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">카드 섞기</button>
               </form>
             );
             case 'shuffling': return (
-              <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full gap-8 md:gap-24">
-                <div className="flex flex-col items-center">
-                  <p className="text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
-                  <div className="relative h-80 w-52 flex items-center justify-center">
+              <div className="flex flex-col md:flex-row items-center justify-center w-full gap-8 md:gap-16">
+                {/* Left/Top Section: Shuffling */}
+                <div className="flex flex-col items-center order-2 md:order-1">
+                  <p className="text-lg sm:text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
+                  <div className="relative h-64 w-44 md:h-80 md:w-52 flex items-center justify-center">
                     {!isAnimating && animationCards.map(({ card, style }, index) => (
                       <div key={`${card.id}-${index}`} className="absolute">
                         <TarotCard card={card} isRevealed={false} size="md" style={style} />
@@ -278,9 +305,10 @@
                   </div>
                   <button onClick={handleSelectCard} disabled={isAnimating} className="mt-6 px-12 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">선택</button>
                 </div>
-                <div className="flex flex-col gap-4 md:pt-16">
+                {/* Right/Bottom Section: Slots */}
+                <div className="flex flex-row md:flex-col gap-2 md:gap-4 order-1 md:order-2 md:pt-16">
                   {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="w-16 h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
+                    <div key={index} className="w-14 h-24 md:w-16 md:h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
                       {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="sm" />}
                     </div>
                   ))}
@@ -289,11 +317,11 @@
             );
             case 'results': return (
               <div className="flex flex-col items-center w-full">
-                <div className="mb-8 text-center p-4 bg-black/20 rounded-lg max-w-2xl">
-                  <p className="text-indigo-200 text-lg">질문:</p>
-                  <p className="text-white text-xl font-semibold">{question}</p>
+                <div className="mb-6 sm:mb-8 text-center p-4 bg-black/20 rounded-lg w-full max-w-2xl">
+                  <p className="text-base sm:text-lg text-indigo-200">질문:</p>
+                  <p className="text-lg sm:text-xl font-semibold">{question}</p>
                 </div>
-                <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-start justify-center">
+                <div className="mb-8 w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-start justify-center place-items-center">
                   {selectedCards.map((card) => (
                     <div key={card.id} className="flex flex-col items-center">
                       <TarotCard card={card} isRevealed={true} size="lg" />
@@ -308,9 +336,9 @@
 
         return (
           <div className="min-h-screen bg-gradient-to-b from-gray-900 via-indigo-950 to-black text-white font-sans p-4 sm:p-8 flex flex-col items-center">
-            <header className="text-center mb-6">
-              <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300 tracking-wider">직관 타로 리딩</h1>
-              {gameState !== 'question' && <p className="text-indigo-200 mt-2">당신의 직관이 이끄는대로 선택하세요.</p>}
+            <header className="text-center mb-6 w-full">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300 tracking-wider">직관 타로 리딩</h1>
+              {gameState !== 'question' && <p className="text-indigo-200 mt-2 text-sm sm:text-base">당신의 직관이 이끄는대로 선택하세요.</p>}
             </header>
             <main className="w-full max-w-screen-xl flex flex-col items-center justify-center flex-grow">{renderContent()}</main>
             <footer className="text-center text-gray-500 mt-auto text-sm pt-8"><p>타로 리딩은 오락용으로만 즐겨주세요.</p></footer>
