@@ -134,34 +134,89 @@
 
       // --- From components/StarryBackground.tsx ---
       const StarryBackground = () => {
-          const [stars, setStars] = useState([]);
+          const [stars, setStars] = useState({ slow: [], medium: [], fast: [] });
+          const layersRef = useRef({ slow: null, medium: null, fast: null });
+          const animationFrameIdRef = useRef(null);
 
           useEffect(() => {
               const generateStars = () => {
-                  const newStars = [];
-                  const numStars = window.innerWidth > 768 ? 150 : 75; // More stars on larger screens
+                  const newStars = { slow: [], medium: [], fast: [] };
+                  const numStars = window.innerWidth > 768 ? 250 : 120;
+                  
                   for (let i = 0; i < numStars; i++) {
-                      newStars.push({
+                      const layer = Math.random();
+                      const star = {
                           id: i,
                           top: `${Math.random() * 100}%`,
                           left: `${Math.random() * 100}%`,
-                          size: `${Math.random() * 2 + 1}px`,
-                          animationDuration: `${Math.random() * 3 + 2}s`, // 2s to 5s
+                          animationDuration: `${Math.random() * 3 + 2}s`,
                           animationDelay: `${Math.random() * 4}s`,
-                      });
+                      };
+
+                      if (layer < 0.5) { // 50% slow
+                          newStars.slow.push({ ...star, size: `${Math.random() * 1 + 0.5}px` });
+                      } else if (layer < 0.85) { // 35% medium
+                          newStars.medium.push({ ...star, size: `${Math.random() * 1.5 + 0.8}px` });
+                      } else { // 15% fast
+                          newStars.fast.push({ ...star, size: `${Math.random() * 2 + 1}px` });
+                      }
                   }
                   setStars(newStars);
               };
 
               generateStars();
-              // Debounced resize handler could be more optimal, but this is simple.
-              window.addEventListener('resize', generateStars);
-              return () => window.removeEventListener('resize', generateStars);
+              // A simple debounced resize handler
+              let timeoutId;
+              const handleResize = () => {
+                  clearTimeout(timeoutId);
+                  timeoutId = setTimeout(generateStars, 250);
+              };
+              window.addEventListener('resize', handleResize);
+              return () => window.removeEventListener('resize', handleResize);
           }, []);
 
-          return (
-              <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden">
-                  {stars.map(star => (
+          useEffect(() => {
+              const handleMouseMove = (e) => {
+                  if (animationFrameIdRef.current) {
+                      cancelAnimationFrame(animationFrameIdRef.current);
+                  }
+                  
+                  animationFrameIdRef.current = requestAnimationFrame(() => {
+                      const { clientX, clientY } = e;
+                      const centerX = window.innerWidth / 2;
+                      const centerY = window.innerHeight / 2;
+
+                      const moveX = (clientX - centerX) / centerX;
+                      const moveY = (clientY - centerY) / centerY;
+                      
+                      if (layersRef.current.slow) {
+                          layersRef.current.slow.style.transform = `translate3d(${moveX * -15}px, ${moveY * -15}px, 0)`;
+                      }
+                      if (layersRef.current.medium) {
+                          layersRef.current.medium.style.transform = `translate3d(${moveX * -30}px, ${moveY * -30}px, 0)`;
+                      }
+                      if (layersRef.current.fast) {
+                          layersRef.current.fast.style.transform = `translate3d(${moveX * -50}px, ${moveY * -50}px, 0)`;
+                      }
+                  });
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove, { passive: true });
+              
+              return () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  if (animationFrameIdRef.current) {
+                      cancelAnimationFrame(animationFrameIdRef.current);
+                  }
+              };
+          }, []);
+
+          const renderLayer = (starData, key) => (
+              <div
+                  ref={el => layersRef.current[key] = el}
+                  className="absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-out"
+              >
+                  {starData.map(star => (
                       <div
                           key={star.id}
                           className="absolute bg-white rounded-full animate-twinkle"
@@ -172,9 +227,18 @@
                               height: star.size,
                               animationDuration: star.animationDuration,
                               animationDelay: star.animationDelay,
+                              opacity: key === 'slow' ? 0.6 : (key === 'medium' ? 0.8 : 1.0)
                           }}
                       ></div>
                   ))}
+              </div>
+          );
+
+          return (
+              <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden">
+                  {renderLayer(stars.slow, 'slow')}
+                  {renderLayer(stars.medium, 'medium')}
+                  {renderLayer(stars.fast, 'fast')}
               </div>
           );
       };
@@ -895,7 +959,7 @@
         };
 
         return (
-          <div className="relative min-h-screen bg-gradient-to-b from-gray-900/95 via-indigo-950/90 to-black text-white font-sans p-4 sm:p-8 flex flex-col items-center overflow-hidden">
+          <div className="relative min-h-screen bg-gradient-to-b from-gray-900/95 via-indigo-950/90 to-black/95 text-white font-sans p-4 sm:p-8 flex flex-col items-center overflow-hidden">
             <StarryBackground />
             <div className="relative z-10 w-full min-h-screen flex flex-col items-center">
               <ParticleCanvas />
