@@ -380,7 +380,8 @@
         
         const shuffleIntervalRef = useRef(null);
         const typingIntervalRef = useRef(null);
-        const placeholderIntervalRef = useRef(null);
+        const placeholderTimeoutRef = useRef(null);
+        const placeholderIndexRef = useRef(0);
         const audioContextRef = useRef(null);
 
         const playSound = useCallback((type) => {
@@ -616,31 +617,51 @@
 
         // Placeholder Rotation Logic
         useEffect(() => {
-          if (gameState === 'question') {
-            const examplePlaceholders = [
-              "예: 저의 연애운은 어떨까요?",
-              "예: 이직을 해야 할까요?",
-              "예: 새로운 도전을 시작해야 할까요?",
-              "예: 금전운은 어떻게 될까요?"
-            ];
-            let currentIndex = 0;
-  
-            placeholderIntervalRef.current = setInterval(() => {
-              setIsPlaceholderFading(true);
-  
-              setTimeout(() => {
-                currentIndex = (currentIndex + 1) % examplePlaceholders.length;
-                setPlaceholder(examplePlaceholders[currentIndex]);
+            const cleanup = () => {
+                if (placeholderTimeoutRef.current) clearTimeout(placeholderTimeoutRef.current);
+            };
+
+            if (gameState === 'question') {
+                const examplePlaceholders = [
+                    "저의 연애운은 어떨까요?",
+                    "이직을 해야 할까요?",
+                    "새로운 도전을 시작해야 할까요?",
+                    "짝사랑하는 사람과 연인이 될 수 있을까요?",
+                    "현재 연인과의 미래는 어떨까요?",
+                    "새로운 사업을 시작해도 될까요?",
+                    "현재 직장에서 승진할 가능성이 있을까요?",
+                    "올해 재정 상황이 좋아질까요?",
+                    "투자하려는 계획이 성공할까요?",
+                    "지금 고민하고 있는 선택, 어떻게 해야 할까요?",
+                    "오늘 저의 몸 컨디션은 어떨까요?"
+                ];
+                
+                const shuffledPlaceholders = shuffleArray(examplePlaceholders);
+                placeholderIndexRef.current = 0;
+                setPlaceholder(shuffledPlaceholders[0]);
                 setIsPlaceholderFading(false);
-              }, 500);
-            }, 4000);
-          } else {
-            if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
-          }
-  
-          return () => {
-            if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
-          };
+        
+                const scheduleNext = (isFirst = false) => {
+                    const delay = isFirst ? 3000 : 2000;
+        
+                    placeholderTimeoutRef.current = setTimeout(() => {
+                        setIsPlaceholderFading(true);
+        
+                        setTimeout(() => {
+                            placeholderIndexRef.current = (placeholderIndexRef.current + 1) % shuffledPlaceholders.length;
+                            setPlaceholder(shuffledPlaceholders[placeholderIndexRef.current]);
+                            setIsPlaceholderFading(false);
+                            scheduleNext(false); 
+                        }, 500); 
+                    }, delay);
+                };
+                
+                scheduleNext(true);
+            } else {
+                cleanup();
+            }
+        
+            return cleanup;
         }, [gameState]);
 
         const handleQuestionSubmit = (e) => {
