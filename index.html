@@ -375,8 +375,12 @@
         const [burstState, setBurstState] = useState([false, false, false]);
         const [typedInterpretation, setTypedInterpretation] = useState({ past: '', present: '', future: '', summary: '' });
         const [currentTypingKey, setCurrentTypingKey] = useState(null);
+        const [placeholder, setPlaceholder] = useState("예: 저의 연애운은 어떨까요?");
+        const [isPlaceholderFading, setIsPlaceholderFading] = useState(false);
+        
         const shuffleIntervalRef = useRef(null);
         const typingIntervalRef = useRef(null);
+        const placeholderIntervalRef = useRef(null);
 
         const shuffleArray = (array) => {
           const newArray = [...array];
@@ -563,6 +567,35 @@
             };
         }, [interpretation, isReadingLoading, gameState]);
 
+        // Placeholder Rotation Logic
+        useEffect(() => {
+          if (gameState === 'question') {
+            const examplePlaceholders = [
+              "예: 저의 연애운은 어떨까요?",
+              "예: 이직을 해야 할까요?",
+              "예: 새로운 도전을 시작해야 할까요?",
+              "예: 금전운은 어떻게 될까요?"
+            ];
+            let currentIndex = 0;
+  
+            placeholderIntervalRef.current = setInterval(() => {
+              setIsPlaceholderFading(true);
+  
+              setTimeout(() => {
+                currentIndex = (currentIndex + 1) % examplePlaceholders.length;
+                setPlaceholder(examplePlaceholders[currentIndex]);
+                setIsPlaceholderFading(false);
+              }, 500);
+            }, 4000);
+          } else {
+            if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
+          }
+  
+          return () => {
+            if (placeholderIntervalRef.current) clearInterval(placeholderIntervalRef.current);
+          };
+        }, [gameState]);
+
         const handleQuestionSubmit = (e) => {
           e.preventDefault();
           if (question.trim()) setGameState('shuffling');
@@ -627,7 +660,11 @@
             case 'question': return (
               <form onSubmit={handleQuestionSubmit} className="w-full max-w-lg flex flex-col items-center">
                 <h2 className="text-xl sm:text-2xl text-indigo-200 mb-4 text-center">어떤 질문을 가지고 계신가요?</h2>
-                <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="예: 저의 연애운은 어떨까요?" className="w-full h-32 p-4 bg-gray-800/50 border-2 border-purple-400/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                <textarea 
+                  value={question} 
+                  onChange={(e) => setQuestion(e.target.value)} 
+                  placeholder={placeholder} 
+                  className={`w-full h-32 p-4 bg-gray-800/50 border-2 border-purple-400/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400 placeholder:text-gray-400 placeholder:transition-opacity placeholder:duration-500 ${isPlaceholderFading ? 'placeholder:opacity-0' : 'placeholder:opacity-100'}`} />
                 <button type="submit" disabled={!question.trim()} className="mt-6 px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">카드 섞기</button>
               </form>
             );
