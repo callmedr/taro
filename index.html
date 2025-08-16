@@ -192,6 +192,79 @@
         );
       };
 
+      // --- From components/CardBurstParticles.tsx ---
+      const CardBurstParticles = ({ isBursting }) => {
+          const canvasRef = useRef(null);
+          const animationFrameIdRef = useRef(null);
+          const particlesRef = useRef([]);
+
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              if (!canvas || !isBursting) return;
+              
+              const ctx = canvas.getContext('2d');
+              canvas.width = 300; 
+              canvas.height = 500;
+              particlesRef.current = [];
+
+              const createParticle = (i) => {
+                  const x = canvas.width / 2;
+                  const y = canvas.height / 2;
+                  const angle = (i / 50) * Math.PI * 2;
+                  const speed = Math.random() * 4 + 2;
+                  const size = Math.random() * 3 + 1;
+                  const life = Math.random() * 60 + 30;
+                  const color = Math.random() > 0.3 ? '#FFD700' : '#E6E6FA'; // Gold and Lavender
+                  return { x, y, size, speedX: Math.cos(angle) * speed, speedY: Math.sin(angle) * speed, life, maxLife: life, color };
+              };
+              
+              for (let i = 0; i < 50; i++) {
+                  particlesRef.current.push(createParticle(i));
+              }
+
+              const animate = () => {
+                  if (!canvas) return;
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  for (let i = particlesRef.current.length - 1; i >= 0; i--) {
+                      const p = particlesRef.current[i];
+                      p.x += p.speedX;
+                      p.y += p.speedY;
+                      p.life -= 1;
+
+                      if (p.life <= 0) {
+                          particlesRef.current.splice(i, 1);
+                          continue;
+                      }
+                      const opacity = Math.max(0, p.life / p.maxLife);
+                      ctx.globalAlpha = opacity;
+                      ctx.beginPath();
+                      ctx.fillStyle = p.color;
+                      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2, false);
+                      ctx.fill();
+                  }
+
+                  if (particlesRef.current.length > 0) {
+                      animationFrameIdRef.current = requestAnimationFrame(animate);
+                  } else {
+                      ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  }
+              };
+              
+              animate();
+
+              return () => {
+                  if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
+              };
+          }, [isBursting]);
+
+          return (
+              <canvas 
+                  ref={canvasRef}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[130%] pointer-events-none z-10"
+              />
+          );
+      };
+
       // --- From components/LoadingSpinner.tsx ---
       const LoadingSpinner = ({ size = 'md', className = '' }) => {
         const sizeClasses = { sm: 'w-6 h-6', md: 'w-10 h-10', lg: 'w-16 h-16' };
@@ -286,6 +359,7 @@
         const [interpretation, setInterpretation] = useState(null);
         const [isReadingLoading, setIsReadingLoading] = useState(false);
         const [readingError, setReadingError] = useState(null);
+        const [burstState, setBurstState] = useState([false, false, false]);
         const shuffleIntervalRef = useRef(null);
 
         const shuffleArray = (array) => {
@@ -391,8 +465,23 @@
         }, [question, selectedCards]);
 
         useEffect(() => {
-          if (gameState === 'results' && selectedCards.length === 3 && !interpretation) {
-            getInterpretation();
+          if (gameState === 'results' && selectedCards.length === 3) {
+            if (!interpretation) {
+              getInterpretation();
+            }
+            // Particle burst logic
+            const timeouts = [];
+            selectedCards.forEach((_, index) => {
+              const timeout = setTimeout(() => {
+                setBurstState(prev => {
+                  const newState = [...prev];
+                  newState[index] = true;
+                  return newState;
+                });
+              }, index * 250 + 400); // Trigger after card entry animation starts
+              timeouts.push(timeout);
+            });
+            return () => timeouts.forEach(clearTimeout);
           }
         }, [gameState, selectedCards, interpretation, getInterpretation]);
 
@@ -430,6 +519,7 @@
           setInterpretation(null);
           setIsReadingLoading(false);
           setReadingError(null);
+          setBurstState([false, false, false]);
           setupDeck();
         };
 
@@ -441,6 +531,16 @@
             case 2: return "세번째 카드를 뽑기 위해 '선택' 버튼을 눌러주세요.";
             default: return "";
           }
+        };
+        
+        const formatInterpretationText = (text) => {
+            if (!text) return '';
+            // Split by one or more newlines, filter empty paragraphs, indent, then join with double newlines for spacing.
+            return text
+                .split(/\n+/)
+                .filter(paragraph => paragraph.trim() !== '')
+                .map(paragraph => `    ${paragraph.trim()}`)
+                .join('\n\n');
         };
 
         const renderContent = () => {
@@ -499,10 +599,11 @@
                   {selectedCards.map((card, index) => (
                     <div 
                       key={card.id} 
-                      className="flex flex-col items-center animate-card-entry"
+                      className="relative flex flex-col items-center animate-card-entry"
                       style={{ animationDelay: `${index * 250}ms` }}
                     >
                       <p className="text-lg font-bold text-purple-300 mb-2">{['과거', '현재', '미래'][index]}</p>
+                      <CardBurstParticles isBursting={burstState[index]} />
                       <TarotCard card={card} isRevealed={true} size="lg" />
                     </div>
                   ))}
@@ -527,19 +628,19 @@
                         <div className="space-y-6 text-left p-6 md:p-8 bg-indigo-950/40 border border-purple-500/20 rounded-xl shadow-2xl shadow-purple-900/20 animate-fade-in">
                             <div>
                                 <h3 className="text-xl font-bold text-purple-300 mb-2 border-b-2 border-purple-400/30 pb-2">과거 (첫번째 카드)</h3>
-                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{interpretation.past}</p>
+                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{formatInterpretationText(interpretation.past)}</p>
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-purple-300 mb-2 border-b-2 border-purple-400/30 pb-2">현재 (두번째 카드)</h3>
-                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{interpretation.present}</p>
+                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{formatInterpretationText(interpretation.present)}</p>
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-purple-300 mb-2 border-b-2 border-purple-400/30 pb-2">미래 (세번째 카드)</h3>
-                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{interpretation.future}</p>
+                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{formatInterpretationText(interpretation.future)}</p>
                             </div>
                              <div>
                                 <h3 className="text-xl font-bold text-green-300 mb-2 border-b-2 border-green-400/30 pb-2">총운 및 조언</h3>
-                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{interpretation.summary}</p>
+                                <p className="text-indigo-100 whitespace-pre-wrap leading-relaxed">{formatInterpretationText(interpretation.summary)}</p>
                             </div>
                         </div>
                     )}
