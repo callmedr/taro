@@ -628,7 +628,7 @@
                     const normalizedIndex = i - (cardsToTake - 1) / 2; // For 15 cards, range is -7 to 7
 
                     const x = normalizedIndex * 45; // Horizontal spacing creates the line
-                    const y = 20; // Constant vertical position, moved down to avoid overlap
+                    const y = -10; // Constant vertical position, moved down to avoid overlap
                     const z = -Math.abs(normalizedIndex) * 20; // Creates a gentle curve
                     const rotationY = -normalizedIndex * 4; // Tilts cards towards the center
 
