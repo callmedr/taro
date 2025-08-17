@@ -990,13 +990,13 @@
               </form>
             );
             case 'shuffling': return (
-              <div className="flex flex-col items-center justify-center w-full gap-8">
+              <div className="flex flex-col items-center justify-center w-full gap-4">
                 {/* Top Section: Shuffling */}
                 <div className="flex flex-col items-center">
-                  <p className="text-lg sm:text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
+                  <p className="text-lg sm:text-xl text-indigo-200 mb-2 h-8 text-center">{getShufflePrompt()}</p>
                    <div 
                         ref={shufflingContainerRef} 
-                        className="relative h-64 w-full flex items-center justify-center"
+                        className="relative h-56 w-full flex items-center justify-center"
                         style={{ transformStyle: 'preserve-3d' }}
                     >
                         {spiralCards.map(({ card, style }, index) => {
@@ -1025,7 +1025,7 @@
                   <button onClick={handleSelectCard} disabled={isAnimating || spiralCards.length === 0} className="mt-2 px-12 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">선택</button>
                 </div>
                 {/* Bottom Section: Slots */}
-                <div className="flex flex-row gap-4 pt-4">
+                <div className="flex flex-row gap-4 pt-2">
                   {Array.from({ length: 3 }).map((_, index) => (
                     <div key={index} className="w-16 h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
                       {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="sm" />}
