@@ -39,6 +39,45 @@
   .animate-fly-slot-0 { animation: fly-to-slot-0 1.2s ease-in-out forwards; }
   .animate-fly-slot-1 { animation: fly-to-slot-1 1.2s ease-in-out forwards; }
   .animate-fly-slot-2 { animation: fly-to-slot-2 1.2s ease-in-out forwards; }
+  
+  /* New spiral animation styles */
+  @keyframes spiral-out {
+    from {
+      transform: translate3d(0, 0, -200px) rotateY(180deg) scale(0.5);
+      opacity: 0;
+    }
+    to {
+      transform: var(--card-transform);
+      opacity: 1;
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: var(--card-transform) translateY(-8px); }
+    50% { transform: var(--card-transform) translateY(8px); }
+  }
+
+  @keyframes spiral-in {
+    to {
+      transform: translate3d(0, 0, -200px) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  .animate-spiral-out {
+    animation: spiral-out 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+  
+  .animate-float {
+    animation-name: float;
+    animation-duration: 5s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+
+  .animate-spiral-in {
+    animation: spiral-in 0.5s ease-in forwards;
+  }
 
   /* Staggered entry animation for result cards */
   @keyframes card-entry {
@@ -413,8 +452,8 @@
       // --- From components/TarotCard.tsx ---
       const TarotCard = ({ card, isRevealed, isSelected = false, onClick, size = 'lg', style, animationClass, onAnimationEnd }) => {
         const sizeClasses = { 
-          sm: 'w-16 h-28', // For slots
-          md: 'w-20 h-36', // For shuffling card
+          sm: 'w-16 h-28', // For slots and shuffling
+          md: 'w-20 h-36',
           lg: 'w-48 h-[21rem] md:w-56 md:h-96' // For result cards
         };
         const iconSizeClasses = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-16 h-16' };
@@ -485,8 +524,7 @@
         const [question, setQuestion] = useState('');
         const [deck, setDeck] = useState([]);
         const [selectedCards, setSelectedCards] = useState([]);
-        const [shufflingCard, setShufflingCard] = useState(null);
-        const [animationCards, setAnimationCards] = useState([]);
+        const [spiralCards, setSpiralCards] = useState([]);
         const [isLoading, setIsLoading] = useState(true);
         const [error, setError] = useState(null);
         const [isAnimating, setIsAnimating] = useState(false);
@@ -500,7 +538,6 @@
         const [placeholder, setPlaceholder] = useState("예: 저의 연애운은 어떨까요?");
         const [isPlaceholderFading, setIsPlaceholderFading] = useState(false);
         
-        const shuffleIntervalRef = useRef(null);
         const typingIntervalRef = useRef(null);
         const placeholderTimeoutRef = useRef(null);
         const placeholderIndexRef = useRef(0);
@@ -581,36 +618,36 @@
           setupDeck();
         }, [setupDeck]);
 
-        const startShuffling = useCallback(() => {
-          if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
-          shuffleIntervalRef.current = window.setInterval(() => {
-            if (deck.length > 0) {
-              const shuffledSlice = shuffleArray(deck).slice(0, 5);
-              const newAnimationCards = shuffledSlice.map((card, index) => {
-                const rotation = Math.random() * 8 - 4;
-                const offsetX = Math.random() * 8 - 4;
-                const offsetY = Math.random() * 8 - 4;
-                return {
-                  card,
-                  style: { transform: `rotate(${rotation}deg) translate(${offsetX}px, ${offsetY}px)`, zIndex: index, transition: 'transform 0.1s ease-out' },
-                };
-              });
-              setAnimationCards(newAnimationCards);
-              if (shuffledSlice.length > 0) setShufflingCard(shuffledSlice[0]);
-            }
-          }, 100);
-        }, [deck]);
-
         useEffect(() => {
-          if (gameState === 'shuffling' && selectedCards.length < 3 && !isAnimating) {
-            startShuffling();
-          } else {
-            if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
-          }
-          return () => {
-            if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
-          };
-        }, [gameState, selectedCards.length, startShuffling, isAnimating]);
+            if (gameState === 'shuffling' && !isAnimating && selectedCards.length < 3) {
+                const NUM_CARDS_TO_DISPLAY = 15;
+                const cardsToTake = Math.min(NUM_CARDS_TO_DISPLAY, deck.length);
+                const cardsToDisplay = shuffleArray(deck).slice(0, cardsToTake);
+
+                const newDisplayedCards = cardsToDisplay.map((card, i) => {
+                    const normalizedIndex = i - (cardsToTake - 1) / 2; // For 15 cards, range is -7 to 7
+
+                    const x = normalizedIndex * 45; // Horizontal spacing creates the line
+                    const y = 20; // Constant vertical position, moved down to avoid overlap
+                    const z = -Math.abs(normalizedIndex) * 20; // Creates a gentle curve
+                    const rotationY = -normalizedIndex * 4; // Tilts cards towards the center
+
+                    const finalTransform = `translate3d(${x}px, ${y}px, ${z}px) rotateY(${rotationY}deg)`;
+                    
+                    return {
+                        card,
+                        style: {
+                            '--card-transform': finalTransform,
+                            animationDelay: `${i * 50}ms`,
+                            zIndex: Math.round(cardsToTake - Math.abs(normalizedIndex)), // Center cards on top
+                        },
+                    };
+                });
+                setSpiralCards(newDisplayedCards);
+            } else if (gameState !== 'shuffling') {
+                setSpiralCards([]); // Clear cards when leaving shuffling state
+            }
+        }, [gameState, isAnimating, selectedCards.length, deck]);
         
         const getInterpretation = useCallback(async () => {
             if (selectedCards.length !== 3 || !question) return;
@@ -789,14 +826,14 @@
         };
 
         const handleSelectCard = () => {
-          if (shufflingCard && selectedCards.length < 3 && !isAnimating) {
-            if (navigator.vibrate) {
-              navigator.vibrate(50);
+            if (spiralCards.length > 0 && !isAnimating) {
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                setIsAnimating(true);
+                const cardToSelect = spiralCards[spiralCards.length - 1].card;
+                setFlyingCard(cardToSelect);
             }
-            if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
-            setIsAnimating(true);
-            setFlyingCard(shufflingCard);
-          }
         };
 
         const handleAnimationEnd = () => {
@@ -806,7 +843,9 @@
             setDeck(prevDeck => prevDeck.filter(card => card.id !== flyingCard.id));
             setFlyingCard(null);
             setIsAnimating(false);
-            if (newSelectedCards.length === 3) setGameState('results');
+            if (newSelectedCards.length === 3) {
+                setGameState('results');
+            }
           }
         };
 
@@ -814,7 +853,7 @@
           setQuestion('');
           setSelectedCards([]);
           setGameState('question');
-          setAnimationCards([]);
+          setSpiralCards([]);
           setIsAnimating(false);
           setFlyingCard(null);
           setInterpretation(null);
@@ -863,25 +902,37 @@
                 {/* Top Section: Shuffling */}
                 <div className="flex flex-col items-center">
                   <p className="text-lg sm:text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
-                  <div className="relative h-40 w-24 md:h-44 md:w-28 flex items-center justify-center">
-                    {!isAnimating && animationCards.map(({ card, style }, index) => (
-                      <div key={`${card.id}-${index}`} className="absolute">
-                        <TarotCard card={card} isRevealed={false} size="md" style={style} />
-                      </div>
-                    ))}
-                    {flyingCard && (
-                      <div className="absolute z-50">
-                        <TarotCard card={flyingCard} isRevealed={false} size="md" animationClass={`animate-fly-slot-${selectedCards.length}`} onAnimationEnd={handleAnimationEnd} />
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={handleSelectCard} disabled={isAnimating} className="mt-6 px-12 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">선택</button>
+                   <div className="relative h-80 w-full flex items-center justify-center [perspective:1200px]">
+                        {spiralCards.map(({ card, style }, index) => {
+                            if (flyingCard && card.id === flyingCard.id) return null;
+                            
+                            const animationDelayStyle = { 
+                                animationDelay: isAnimating ? `${index * 20}ms` : style.animationDelay 
+                            };
+
+                            return (
+                                <div
+                                    key={card.id}
+                                    className={`absolute ${isAnimating ? 'animate-spiral-in' : 'animate-spiral-out animate-float'}`}
+                                    style={{ ...style, ...animationDelayStyle }}
+                                >
+                                    <TarotCard card={card} isRevealed={false} size="md" />
+                                </div>
+                            );
+                        })}
+                        {flyingCard && (
+                            <div className="absolute z-50">
+                                <TarotCard card={flyingCard} isRevealed={false} size="md" animationClass={`animate-fly-slot-${selectedCards.length}`} onAnimationEnd={handleAnimationEnd} />
+                            </div>
+                        )}
+                    </div>
+                  <button onClick={handleSelectCard} disabled={isAnimating || spiralCards.length === 0} className="mt-6 px-12 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">선택</button>
                 </div>
                 {/* Bottom Section: Slots */}
                 <div className="flex flex-row gap-4 pt-4">
                   {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="w-16 h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
-                      {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="sm" />}
+                    <div key={index} className="w-20 h-36 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
+                      {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="md" />}
                     </div>
                   ))}
                 </div>
