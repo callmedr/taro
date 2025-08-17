@@ -129,6 +129,15 @@
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
   }
+
+  /* Twinkle animation for the card back icon */
+  @keyframes twinkle-icon {
+    0%, 100% { opacity: 0.4; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+  .animate-twinkle-icon {
+    animation: twinkle-icon 2.5s ease-in-out infinite;
+  }
 </style>
 </head>
 <body class="bg-gray-900">
@@ -450,7 +459,7 @@
       };
 
       // --- From components/TarotCard.tsx ---
-      const TarotCard = ({ card, isRevealed, isSelected = false, onClick, size = 'lg', style, animationClass, onAnimationEnd }) => {
+      const TarotCard = ({ card, isRevealed, isSelected = false, onClick, size = 'lg', style, animationClass, onAnimationEnd, isShuffling = false }) => {
         const sizeClasses = { 
           sm: 'w-16 h-28', // For slots and shuffling
           md: 'w-20 h-36',
@@ -502,7 +511,7 @@
               <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isRevealed ? '[transform:rotateY(180deg)]' : ''} ${isSelected && !isRevealed ? 'ring-4 ring-purple-400 rounded-lg' : ''}`}>
                 <div className="absolute w-full h-full [backface-visibility:hidden] rounded-lg bg-indigo-900 border-2 border-purple-400/50 shadow-lg shadow-purple-900/50 flex items-center justify-center overflow-hidden">
                   <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.1)_0%,_rgba(255,255,255,0)_60%)]"></div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconSizeClasses[size]} text-purple-400 opacity-50`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`${iconSizeClasses[size]} text-purple-400 opacity-50 ${isShuffling ? 'animate-twinkle-icon' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 L12 2 z"/>
                   </svg>
                 </div>
@@ -627,7 +636,7 @@
                 const newDisplayedCards = cardsToDisplay.map((card, i) => {
                     const normalizedIndex = i - (cardsToTake - 1) / 2; // For 15 cards, range is -7 to 7
 
-                    const x = normalizedIndex * 45; // Horizontal spacing creates the line
+                    const x = normalizedIndex * 36; // Horizontal spacing creates the line
                     const y = -10; // Constant vertical position, moved down to avoid overlap
                     const z = -Math.abs(normalizedIndex) * 20; // Creates a gentle curve
                     const rotationY = -normalizedIndex * 4; // Tilts cards towards the center
@@ -902,7 +911,7 @@
                 {/* Top Section: Shuffling */}
                 <div className="flex flex-col items-center">
                   <p className="text-lg sm:text-xl text-indigo-200 mb-4 h-8 text-center">{getShufflePrompt()}</p>
-                   <div className="relative h-80 w-full flex items-center justify-center [perspective:1200px]">
+                   <div className="relative h-64 w-full flex items-center justify-center [perspective:1200px]">
                         {spiralCards.map(({ card, style }, index) => {
                             if (flyingCard && card.id === flyingCard.id) return null;
                             
@@ -916,13 +925,13 @@
                                     className={`absolute ${isAnimating ? 'animate-spiral-in' : 'animate-spiral-out animate-float'}`}
                                     style={{ ...style, ...animationDelayStyle }}
                                 >
-                                    <TarotCard card={card} isRevealed={false} size="md" />
+                                    <TarotCard card={card} isRevealed={false} size="sm" isShuffling={true} />
                                 </div>
                             );
                         })}
                         {flyingCard && (
                             <div className="absolute z-50">
-                                <TarotCard card={flyingCard} isRevealed={false} size="md" animationClass={`animate-fly-slot-${selectedCards.length}`} onAnimationEnd={handleAnimationEnd} />
+                                <TarotCard card={flyingCard} isRevealed={false} size="sm" animationClass={`animate-fly-slot-${selectedCards.length}`} onAnimationEnd={handleAnimationEnd} />
                             </div>
                         )}
                     </div>
@@ -931,8 +940,8 @@
                 {/* Bottom Section: Slots */}
                 <div className="flex flex-row gap-4 pt-4">
                   {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="w-20 h-36 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
-                      {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="md" />}
+                    <div key={index} className="w-16 h-28 rounded-lg bg-indigo-900/50 border-2 border-dashed border-purple-400/30 flex items-center justify-center">
+                      {selectedCards[index] && <TarotCard card={selectedCards[index]} isRevealed={true} size="sm" />}
                     </div>
                   ))}
                 </div>
