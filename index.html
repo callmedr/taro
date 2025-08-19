@@ -583,7 +583,6 @@
         const [currentTypingKey, setCurrentTypingKey] = useState(null);
         const [placeholder, setPlaceholder] = useState("예: 저의 연애운은 어떨까요?");
         const [isPlaceholderFading, setIsPlaceholderFading] = useState(false);
-        const shufflingContainerRef = useRef(null);
         
         const typingIntervalRef = useRef(null);
         const placeholderTimeoutRef = useRef(null);
@@ -860,51 +859,6 @@
             return cleanup;
         }, [gameState]);
 
-        // 3D perspective shift on mouse move during shuffling
-        useEffect(() => {
-            const container = shufflingContainerRef.current;
-            if (!container) return;
-
-            const handleMouseMove = (e) => {
-                const { clientX, clientY } = e;
-                const { left, top, width, height } = container.getBoundingClientRect();
-                const centerX = left + width / 2;
-                const centerY = top + height / 2;
-                
-                const moveX = (clientX - centerX) / (width / 2);
-                const moveY = (clientY - centerY) / (height / 2);
-                
-                const rotateY = moveX * 7;
-                const rotateX = -moveY * 7;
-
-                requestAnimationFrame(() => {
-                    container.style.transition = 'transform 0.1s linear';
-                    container.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-                });
-            };
-
-            const handleMouseLeave = () => {
-                requestAnimationFrame(() => {
-                    if (container) {
-                      container.style.transition = 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
-                      container.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg)';
-                    }
-                });
-            };
-            
-            if (gameState === 'shuffling') {
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseleave', handleMouseLeave);
-            } else {
-                handleMouseLeave();
-            }
-            
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseleave', handleMouseLeave);
-            };
-        }, [gameState]);
-
         const handleQuestionSubmit = (e) => {
           e.preventDefault();
           if (!audioContextRef.current) {
@@ -995,9 +949,8 @@
                 <div className="flex flex-col items-center">
                   <p className="text-lg sm:text-xl text-indigo-200 mb-2 h-8 text-center">{getShufflePrompt()}</p>
                    <div 
-                        ref={shufflingContainerRef} 
                         className="relative h-56 w-full flex items-center justify-center"
-                        style={{ transformStyle: 'preserve-3d' }}
+                        style={{ transformStyle: 'preserve-3d', transform: 'perspective(1200px)' }}
                     >
                         {spiralCards.map(({ card, style }, index) => {
                             if (flyingCard && card.id === flyingCard.id) return null;
